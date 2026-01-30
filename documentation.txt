@@ -1,0 +1,2523 @@
+================================================================================
+Ring TUI Library - Complete Tutorial and Reference Guide
+================================================================================
+
+.. contents:: Table of Contents
+   :depth: 3
+   :local:
+
+Introduction
+============
+
+Overview
+--------
+
+The Ring TUI (Terminal User Interface) Library is a comprehensive framework for 
+building text-based graphical user interfaces in the Ring programming language. 
+Built on top of RogueUtil for terminal manipulation, it provides a rich set of 
+widgets and controls that enable developers to create professional-looking 
+terminal applications with mouse support, keyboard navigation, and event-driven 
+architecture.
+
+Features
+--------
+
+* **Core Framework**: Kernel for terminal operations, EventManager for event handling
+* **Basic Widgets**: Label, Button, TextBox, CheckBox, EditBox, Rectangle
+* **Data Controls**: Grid (table), ListBox, ComboBox, TreeView
+* **Navigation Controls**: TabControl, MenuBar with nested submenus
+* **Utility Controls**: ProgressBar, Spinner, HScrollBar, VScrollBar
+* **Window Management**: Window, ManagedWindow, WindowManager with overlapping windows
+* **Event System**: Keyboard and mouse event handling with custom callbacks
+* **Color Support**: 16-color palette with named constants
+
+Requirements
+------------
+
+* Ring Programming Language (1.18 or later recommended)
+* RogueUtil library for Ring (rogueutil.ring)
+* Standard Library Core (stdlibcore.ring)
+* Windows or Linux terminal with ANSI support
+
+Installation
+------------
+
+1. Ensure Ring is installed on your system
+2. Place the TUI library file (demo.ring) in your project directory
+3. Load the required libraries::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+
+Getting Started
+===============
+
+Basic Application Structure
+---------------------------
+
+Every Ring TUI application follows this basic structure::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    # Include the TUI library classes here or load from separate file
+    
+    func main
+        # Initialize the Kernel
+        k = new Kernel()
+        k.clear()
+        k.enableMouse()
+        
+        # Create EventManager
+        em = new EventManager(k)
+        
+        # Create your UI here
+        # ...
+        
+        # Run the event loop
+        em.run()
+        
+        # Cleanup
+        k.disableMouse()
+
+Hello World Example
+-------------------
+
+A simple "Hello World" application::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    # Global for event handlers
+    $kernel = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        
+        em = new EventManager(k)
+        
+        # Create a window
+        win = new Window(k, 10, 5, 40, 10, "Hello World")
+        
+        # Create a label inside the window
+        lbl = new Label(k, 15, 8, 30, 1)
+        lbl.setText("Welcome to Ring TUI!")
+        lbl.fgColor = YELLOW
+        
+        # Create a button
+        btn = new Button(k, 20, 11, 12, 1)
+        btn.setText("OK")
+        btn.onClick = func {
+            $kernel.clear()
+            # Exit will happen via ESC
+        }
+        
+        # Add controls to window
+        win.addChild(lbl)
+        win.addChild(btn)
+        
+        # Draw and register
+        win.draw()
+        em.registerWidget(btn)
+        em.setFocus(btn)
+        
+        # Run event loop (ESC to exit)
+        em.run()
+        
+        k.disableMouse()
+
+Color Constants
+===============
+
+The library provides 16 named color constants for consistent styling:
+
+Basic Colors (0-7)
+------------------
+
+========== ===== ===========
+Constant   Value Description
+========== ===== ===========
+BLACK      0     Black
+BLUE       1     Dark Blue
+GREEN      2     Dark Green
+CYAN       3     Dark Cyan
+RED        4     Dark Red
+MAGENTA    5     Dark Magenta
+BROWN      6     Brown/Orange
+GREY       7     Light Gray
+========== ===== ===========
+
+Bright Colors (8-15)
+--------------------
+
+=========== ===== ===========
+Constant    Value Description
+=========== ===== ===========
+DARKGREY    8     Dark Gray
+LIGHTBLUE   9     Light Blue
+LIGHTGREEN  10    Light Green
+LIGHTCYAN   11    Light Cyan
+LIGHTRED    12    Light Red
+LIGHTMAGENTA 13   Light Magenta
+YELLOW      14    Yellow
+WHITE       15    White
+=========== ===== ===========
+
+Usage Example::
+
+    label.fgColor = YELLOW      # Yellow text
+    label.bgColor = BLUE        # Blue background
+    button.normalBgColor = GREY # Gray button background
+
+Core Classes
+============
+
+Kernel Class
+------------
+
+The Kernel class provides low-level terminal operations and serves as the 
+foundation for all UI rendering.
+
+**Properties:**
+
+* ``rows`` - Terminal height in rows
+* ``cols`` - Terminal width in columns
+* ``mouseEnabled`` - Boolean indicating mouse support status
+* ``defaultFgColor`` - Default foreground color for clearing
+* ``defaultBgColor`` - Default background color for clearing
+* ``screenWidgets`` - List of widgets for automatic redrawing
+
+**Methods:**
+
+``init()``
+    Initializes the terminal, hides cursor, disables echo.
+    Returns self for chaining.
+
+``getRows()``
+    Returns current terminal height.
+
+``getCols()``
+    Returns current terminal width.
+
+``setDefaultColors(fg, bg)``
+    Sets default colors for region clearing.
+    
+    :param fg: Foreground color constant
+    :param bg: Background color constant
+
+``clear()``
+    Clears the entire terminal screen.
+
+``printAt(x, y, text)``
+    Prints text at specified coordinates.
+    
+    :param x: Column position (1-based)
+    :param y: Row position (1-based)
+    :param text: String to print
+
+``setTermColor(fg, bg)``
+    Sets the current foreground and background colors.
+
+``resetTermColor()``
+    Resets colors to terminal defaults.
+
+``enableMouse()``
+    Enables mouse input support.
+
+``disableMouse()``
+    Disables mouse input support.
+
+``getKey()``
+    Waits for and returns a key press.
+
+``checkKeyHit()``
+    Non-blocking check for key press. Returns true if key available.
+
+``sleep(milliseconds)``
+    Pauses execution for specified milliseconds.
+
+``gotoXY(x, y)``
+    Moves cursor to specified position.
+
+``setCursorVisible(visible)``
+    Shows (1) or hides (0) the cursor.
+
+``registerScreenWidget(widget)``
+    Registers a widget for automatic redrawing when regions are cleared.
+
+``unregisterScreenWidget(widget)``
+    Removes a widget from screen management.
+
+``clearScreenWidgets()``
+    Clears all registered screen widgets.
+
+``clearRegion(x, y, width, height)``
+    Clears a rectangular region with default background color.
+
+``redrawRegion(x, y, width, height)``
+    Redraws all registered widgets that intersect with the region.
+
+**Example:**
+
+::
+
+    k = new Kernel()
+    k.clear()
+    k.enableMouse()
+    k.setDefaultColors(WHITE, BLUE)
+    
+    k.setTermColor(YELLOW, BLUE)
+    k.printAt(10, 5, "Hello, World!")
+    k.resetTermColor()
+    
+    key = k.getKey()  # Wait for key press
+
+Event Class
+-----------
+
+The Event class represents user input events.
+
+**Properties:**
+
+* ``type`` - Event type: "keyboard", "mouse", or "timer"
+* ``key`` - Key code for keyboard events
+* ``char`` - Character representation of key
+* ``x`` - Mouse X coordinate
+* ``y`` - Mouse Y coordinate
+* ``target`` - Target widget (if applicable)
+* ``data`` - Additional event data
+
+**Example:**
+
+::
+
+    evt = new Event("keyboard")
+    evt.key = 13  # Enter key
+    
+    evt = new Event("mouse")
+    evt.x = 10
+    evt.y = 5
+    evt.data = true  # Left button clicked
+
+EventManager Class
+------------------
+
+The EventManager handles the main event loop, widget registration, and 
+event dispatching.
+
+**Properties:**
+
+* ``kernel`` - Reference to Kernel instance
+* ``widgets`` - List of registered widgets
+* ``focusedWidget`` - Currently focused widget
+* ``running`` - Boolean indicating if event loop is active
+* ``menuBar`` - Optional MenuBar component
+* ``tabControl`` - Optional TabControl component
+* ``statusBar`` - Optional status bar Label
+* ``onKeyboardHandler`` - Custom keyboard event callback
+* ``onMouseHandler`` - Custom mouse event callback
+* ``onTimerHandler`` - Custom timer callback
+* ``timerInterval`` - Timer callback interval in loop iterations
+
+**Methods:**
+
+``init(kernel)``
+    Creates EventManager with given Kernel.
+    
+    :param kernel: Kernel instance
+
+``registerWidget(widget)``
+    Adds a widget to the event system.
+
+``unregisterWidget(widget)``
+    Removes a widget from the event system.
+
+``clearWidgets()``
+    Removes all registered widgets.
+
+``setFocus(widget)``
+    Sets focus to specified widget.
+
+``focusNext()``
+    Moves focus to next focusable widget.
+
+``setMenuBar(menuBar)``
+    Sets the menu bar component.
+
+``setTabControl(tabControl)``
+    Sets the tab control component.
+
+``setStatusBar(statusBar)``
+    Sets the status bar label.
+
+``setOnKeyboard(handler)``
+    Sets custom keyboard event handler.
+    
+    :param handler: Function receiving Event, returning true if handled
+
+``setOnMouse(handler)``
+    Sets custom mouse event handler.
+    
+    :param handler: Function receiving Event, returning true if handled
+
+``setOnTimer(handler, interval)``
+    Sets timer callback.
+    
+    :param handler: Function called periodically
+    :param interval: Iterations between calls (0 to disable)
+
+``run()``
+    Starts the main event loop. Exits on ESC key.
+
+``stop()``
+    Stops the event loop.
+
+**Example:**
+
+::
+
+    em = new EventManager(k)
+    
+    # Register widgets
+    em.registerWidget(button1)
+    em.registerWidget(textbox1)
+    em.setFocus(textbox1)
+    
+    # Set optional components
+    em.setMenuBar(menuBar)
+    em.setStatusBar(statusLabel)
+    
+    # Custom keyboard handler
+    em.setOnKeyboard(func evt {
+        if evt.key = KEY_F1
+            showHelp()
+            return true
+        ok
+        return false
+    })
+    
+    # Timer for animations (every 20 iterations ≈ 200ms)
+    em.setOnTimer(func {
+        updateAnimation()
+    }, 20)
+    
+    # Run until ESC pressed
+    em.run()
+
+Basic Widgets
+=============
+
+Widget Base Class
+-----------------
+
+All controls inherit from Widget, which provides common properties and methods.
+
+**Properties:**
+
+* ``x`` - X position (column)
+* ``y`` - Y position (row)
+* ``width`` - Widget width
+* ``height`` - Widget height
+* ``text`` - Widget text content
+* ``visible`` - Visibility flag
+* ``enabled`` - Enabled/disabled state
+* ``focused`` - Focus state
+* ``focusable`` - Whether widget can receive focus
+* ``kernel`` - Reference to Kernel
+* ``fgColor`` - Foreground color
+* ``bgColor`` - Background color
+
+**Methods:**
+
+``init(kernel, x, y, width, height)``
+    Initializes widget with position and size.
+
+``draw()``
+    Renders the widget. Override in subclasses.
+
+``handleEvent(event)``
+    Processes events. Override in subclasses.
+
+``setText(text)``
+    Sets the widget's text content.
+
+``show()``
+    Makes widget visible and redraws.
+
+``hide()``
+    Hides the widget.
+
+Label
+-----
+
+A non-focusable text display widget.
+
+**Properties:**
+
+* Inherits all Widget properties
+* ``focusable = false`` - Labels cannot receive focus
+
+**Example:**
+
+::
+
+    # Create a label
+    lbl = new Label(k, 5, 3, 30, 1)
+    lbl.setText("Enter your name:")
+    lbl.fgColor = WHITE
+    lbl.bgColor = BLUE
+    lbl.draw()
+    
+    # Label with different styling
+    titleLabel = new Label(k, 10, 1, 40, 1)
+    titleLabel.setText("Application Title")
+    titleLabel.fgColor = YELLOW
+    titleLabel.bgColor = BLACK
+    titleLabel.draw()
+
+Button
+------
+
+An interactive button with click support.
+
+**Properties:**
+
+* ``onClick`` - Click handler function
+* ``pressed`` - Button press state
+* ``normalFgColor`` - Normal state foreground (default: BLACK)
+* ``normalBgColor`` - Normal state background (default: GREY)
+* ``focusedFgColor`` - Focused state foreground (default: WHITE)
+* ``focusedBgColor`` - Focused state background (default: LIGHTBLUE)
+* ``pressedFgColor`` - Pressed state foreground (default: WHITE)
+* ``pressedBgColor`` - Pressed state background (default: BLUE)
+
+**Methods:**
+
+``setOnClick(handler)``
+    Sets the click handler function.
+
+**Keyboard:**
+
+* Enter/Space - Activates button
+
+**Mouse:**
+
+* Left click - Activates button
+
+**Example:**
+
+::
+
+    # Create a button
+    btn = new Button(k, 10, 15, 12, 1)
+    btn.setText("Submit")
+    btn.onClick = func {
+        $statusBar.setText("Form submitted!")
+        $statusBar.draw()
+    }
+    btn.draw()
+    
+    em.registerWidget(btn)
+    
+    # Custom styled button
+    cancelBtn = new Button(k, 25, 15, 12, 1)
+    cancelBtn.setText("Cancel")
+    cancelBtn.normalBgColor = RED
+    cancelBtn.focusedBgColor = LIGHTRED
+    cancelBtn.onClick = func {
+        # Cancel action
+    }
+    cancelBtn.draw()
+
+TextBox
+-------
+
+A single-line text input field.
+
+**Properties:**
+
+* ``maxLength`` - Maximum text length (default: 50)
+* ``cursorPos`` - Current cursor position
+
+**Methods:**
+
+``showCursor()``
+    Positions and shows the text cursor.
+
+**Keyboard:**
+
+* Left/Right arrows - Move cursor
+* Home/End - Jump to start/end
+* Backspace - Delete character before cursor
+* Delete - Delete character at cursor
+* Printable characters - Insert at cursor
+
+**Mouse:**
+
+* Left click - Position cursor
+
+**Example:**
+
+::
+
+    # Create a text input
+    txtName = new TextBox(k, 15, 5, 30, 1)
+    txtName.setText("Default Value")
+    txtName.cursorPos = len(txtName.text)
+    txtName.draw()
+    
+    em.registerWidget(txtName)
+    em.setFocus(txtName)
+    
+    # Access the value later
+    userName = txtName.text
+
+CheckBox
+--------
+
+A toggleable checkbox control.
+
+**Properties:**
+
+* ``checked`` - Boolean checked state
+
+**Methods:**
+
+``setChecked(state)``
+    Sets the checked state.
+    
+    :param state: true or false
+
+``toggle()``
+    Toggles the checked state.
+
+**Keyboard:**
+
+* Space/Enter - Toggle state
+
+**Mouse:**
+
+* Left click - Toggle state
+
+**Example:**
+
+::
+
+    # Create checkboxes
+    chkSubscribe = new CheckBox(k, 5, 8, 30, 1)
+    chkSubscribe.setText("Subscribe to newsletter")
+    chkSubscribe.draw()
+    
+    chkTerms = new CheckBox(k, 5, 9, 30, 1)
+    chkTerms.setText("Accept terms and conditions")
+    chkTerms.setChecked(true)  # Checked by default
+    chkTerms.draw()
+    
+    em.registerWidget(chkSubscribe)
+    em.registerWidget(chkTerms)
+    
+    # Check state later
+    if chkTerms.checked
+        # Process form
+    ok
+
+EditBox
+-------
+
+A multi-line text editor with scrolling support.
+
+**Properties:**
+
+* ``lines`` - List of text lines
+* ``cursorX`` - Cursor column position
+* ``cursorY`` - Cursor line number
+* ``scrollY`` - Vertical scroll offset
+* ``maxLength`` - Maximum characters per line
+
+**Keyboard:**
+
+* Arrow keys - Navigate within text
+* Home/End - Jump to line start/end
+* Page Up/Down - Scroll by page
+* Backspace/Delete - Delete characters
+* Enter - New line
+* Printable characters - Insert text
+
+**Example:**
+
+::
+
+    # Create multi-line editor
+    editor = new EditBox(k, 5, 5, 50, 10)
+    editor.setText("Line 1" + nl + "Line 2" + nl + "Line 3")
+    editor.draw()
+    
+    em.registerWidget(editor)
+    em.setFocus(editor)
+    
+    # Get text with newlines
+    content = editor.text
+
+Rectangle
+---------
+
+A decorative border/frame widget.
+
+**Properties:**
+
+* ``borderStyle`` - "single" or "double"
+* ``filled`` - Whether to fill interior
+* ``fillChar`` - Character for filling (ASCII code)
+* ``focusable = false`` - Rectangles cannot receive focus
+
+**Methods:**
+
+``setBorderStyle(style)``
+    Sets border style.
+    
+    :param style: "single" or "double"
+
+``setFilled(fill, char)``
+    Enables/disables filling.
+    
+    :param fill: true or false
+    :param char: Fill character ASCII code (optional)
+
+**Example:**
+
+::
+
+    # Simple border
+    border = new Rectangle(k, 2, 2, 40, 15)
+    border.setBorderStyle("double")
+    border.fgColor = CYAN
+    border.draw()
+    
+    # Filled rectangle
+    filledRect = new Rectangle(k, 5, 5, 10, 3)
+    filledRect.setBorderStyle("single")
+    filledRect.setFilled(true, 176)  # Light shade character
+    filledRect.fgColor = GREEN
+    filledRect.draw()
+
+Container Widgets
+=================
+
+Frame
+-----
+
+A container that can hold child widgets and draws them automatically.
+
+**Properties:**
+
+* ``children`` - List of child widgets
+* ``bgChar`` - Background character (default: space)
+
+**Methods:**
+
+``addChild(widget)``
+    Adds a widget as child. Returns self for chaining.
+
+``removeChild(widget)``
+    Removes a child widget.
+
+``clearChildren()``
+    Removes all children.
+
+**Example:**
+
+::
+
+    frame = new Frame(k, 5, 5, 40, 15)
+    frame.bgColor = BLUE
+    
+    lbl = new Label(k, 7, 7, 20, 1)
+    lbl.setText("Inside Frame")
+    
+    frame.addChild(lbl)
+    frame.draw()  # Draws frame and all children
+
+Window
+------
+
+A titled window container with border. Inherits from Frame.
+
+**Properties:**
+
+* ``title`` - Window title text
+* ``borderColor`` - Border color (default: LIGHTCYAN)
+* ``children`` - Inherited from Frame
+
+**Methods:**
+
+* Inherits all Frame methods
+
+**Example:**
+
+::
+
+    # Create window with title
+    win = new Window(k, 10, 3, 50, 18, "Settings Window")
+    win.borderColor = YELLOW
+    
+    # Add controls
+    lblName = new Label(k, 12, 5, 15, 1)
+    lblName.setText("Username:")
+    
+    txtName = new TextBox(k, 27, 5, 25, 1)
+    
+    btnSave = new Button(k, 30, 18, 10, 1)
+    btnSave.setText("Save")
+    
+    win.addChild(lblName)
+    win.addChild(txtName)
+    win.addChild(btnSave)
+    
+    # Single draw call renders everything
+    win.draw()
+
+ManagedWindow
+-------------
+
+A window with relative child positioning, dragging, resizing, and 
+maximize/restore support. Used with WindowManager.
+
+**Properties:**
+
+* ``title`` - Window title
+* ``active`` - Active/focused state
+* ``children`` - List of child widgets
+* ``childRelX`` - Relative X positions
+* ``childRelY`` - Relative Y positions
+* ``draggable`` - Whether window can be dragged
+* ``resizable`` - Whether window can be resized
+* ``minimized`` - Minimized state
+* ``maximized`` - Maximized state
+* ``savedX, savedY, savedWidth, savedHeight`` - Saved dimensions for restore
+* ``minWidth, minHeight`` - Minimum dimensions
+
+**Methods:**
+
+``addChild(widget, relX, relY)``
+    Adds child with position relative to window content area.
+    
+    :param widget: Widget to add
+    :param relX: X offset from content area left
+    :param relY: Y offset from content area top
+
+``removeChild(widget)``
+    Removes a child widget.
+
+``setTitle(title)``
+    Sets window title.
+
+``activate()``
+    Activates the window.
+
+``deactivate()``
+    Deactivates the window.
+
+``maximize()``
+    Maximizes window to full screen.
+
+``restore()``
+    Restores from maximized state.
+
+``isMaximized()``
+    Returns true if maximized.
+
+``close()``
+    Closes the window.
+
+**Example:**
+
+::
+
+    # Create managed window
+    mwin = new ManagedWindow(k, 5, 3, 40, 15, "Editor")
+    mwin.draggable = true
+    mwin.resizable = true
+    
+    # Add child at relative position (2, 1) from content area
+    txtContent = new EditBox(k, 0, 0, 34, 10)
+    mwin.addChild(txtContent, 2, 1)
+    
+    mwin.draw()
+
+WindowManager
+-------------
+
+Manages multiple overlapping ManagedWindows with z-order, focus, and 
+window cycling.
+
+**Properties:**
+
+* ``kernel`` - Kernel reference
+* ``windows`` - List of managed windows
+* ``activeWindow`` - Currently active window
+
+**Methods:**
+
+``addWindow(window)``
+    Adds a window to management.
+
+``removeWindow(window)``
+    Removes a window.
+
+``activateWindow(window)``
+    Brings window to front and activates it.
+
+``getActiveWindow()``
+    Returns currently active window.
+
+``nextWindow()``
+    Cycles to next window.
+
+``drawAll()``
+    Redraws all windows in z-order.
+
+``run()``
+    Runs the window manager event loop.
+
+**Keyboard:**
+
+* F12 - Cycle through windows
+* Tab - Navigate controls within window
+* Arrow keys on title bar - Move window
+* Ctrl+Arrow keys - Resize window
+* Enter on maximize button - Toggle maximize
+
+**Mouse:**
+
+* Click title bar - Drag to move
+* Click [X] - Close window
+* Click [+] - Maximize/restore
+* Click borders - Resize
+
+**Example:**
+
+::
+
+    wm = new WindowManager(k)
+    
+    # Create first window
+    win1 = new ManagedWindow(k, 2, 2, 35, 12, "Window 1")
+    lbl1 = new Label(k, 0, 0, 25, 1)
+    lbl1.setText("Content of Window 1")
+    win1.addChild(lbl1, 2, 2)
+    
+    # Create second window
+    win2 = new ManagedWindow(k, 20, 5, 35, 12, "Window 2")
+    lbl2 = new Label(k, 0, 0, 25, 1)
+    lbl2.setText("Content of Window 2")
+    win2.addChild(lbl2, 2, 2)
+    
+    # Add to manager
+    wm.addWindow(win1)
+    wm.addWindow(win2)
+    
+    # Run window manager
+    wm.run()  # ESC to exit
+
+Data Controls
+=============
+
+ListBox
+-------
+
+A scrollable list of selectable items.
+
+**Properties:**
+
+* ``items`` - List of item strings
+* ``selectedIndex`` - Currently selected index (1-based)
+* ``scrollOffset`` - Scroll position
+* ``itemBgColor`` - Item background color
+* ``selectedFgColor`` - Selected item foreground
+* ``selectedBgColor`` - Selected item background
+
+**Methods:**
+
+``addItem(text)``
+    Adds an item to the list.
+
+``removeItem(index)``
+    Removes item at index.
+
+``clear()``
+    Removes all items.
+
+``getSelectedItem()``
+    Returns selected item text.
+
+``setSelectedIndex(index)``
+    Sets selected index.
+
+**Keyboard:**
+
+* Up/Down arrows - Navigate items
+* Page Up/Down - Scroll by page
+* Home/End - Jump to first/last
+
+**Mouse:**
+
+* Left click - Select item
+* Click scrollbar - Scroll
+
+**Example:**
+
+::
+
+    # Create list box
+    lstCountries = new ListBox(k, 10, 5, 25, 8)
+    lstCountries.addItem("United States")
+    lstCountries.addItem("United Kingdom")
+    lstCountries.addItem("Canada")
+    lstCountries.addItem("Australia")
+    lstCountries.addItem("Germany")
+    lstCountries.addItem("France")
+    lstCountries.addItem("Japan")
+    lstCountries.selectedIndex = 1
+    lstCountries.draw()
+    
+    em.registerWidget(lstCountries)
+    
+    # Get selection
+    selected = lstCountries.getSelectedItem()
+
+ComboBox
+--------
+
+A dropdown selection control.
+
+**Properties:**
+
+* ``items`` - List of item strings
+* ``selectedIndex`` - Currently selected index
+* ``expanded`` - Dropdown expanded state
+* ``maxDropdownHeight`` - Maximum dropdown height
+
+**Methods:**
+
+``addItem(text)``
+    Adds an item to the dropdown.
+
+``removeItem(index)``
+    Removes item at index.
+
+``clear()``
+    Removes all items.
+
+``getSelectedItem()``
+    Returns selected item text.
+
+``expand()``
+    Opens the dropdown.
+
+``collapse()``
+    Closes the dropdown.
+
+**Keyboard:**
+
+* Up/Down arrows - Change selection (closed) or navigate (open)
+* Enter/Space - Toggle dropdown
+* Escape - Close dropdown
+
+**Mouse:**
+
+* Left click - Toggle dropdown or select item
+
+**Example:**
+
+::
+
+    # Create combo box
+    cmbLanguage = new ComboBox(k, 15, 10, 25, 1)
+    cmbLanguage.addItem("English")
+    cmbLanguage.addItem("Spanish")
+    cmbLanguage.addItem("French")
+    cmbLanguage.addItem("German")
+    cmbLanguage.addItem("Chinese")
+    cmbLanguage.draw()
+    
+    em.registerWidget(cmbLanguage)
+    
+    # Get selection
+    language = cmbLanguage.getSelectedItem()
+
+Grid
+----
+
+A full-featured data grid/table control with editing support.
+
+**Properties:**
+
+* ``columns`` - List of column definitions
+* ``rows`` - List of row data
+* ``selectedRow`` - Selected row index (1-based)
+* ``selectedCol`` - Selected column index (1-based)
+* ``scrollX`` - Horizontal scroll offset
+* ``scrollY`` - Vertical scroll offset
+* ``showHeaders`` - Show column headers
+* ``showRowNumbers`` - Show row numbers
+* ``rowNumberWidth`` - Width of row number column
+* ``editable`` - Allow cell editing
+* ``headerFgColor, headerBgColor`` - Header colors
+* ``cellFgColor, cellBgColor`` - Cell colors
+* ``selectedFgColor, selectedBgColor`` - Selected cell colors
+
+**Methods:**
+
+``addColumn(title, width)``
+    Adds a column with title and width.
+
+``addRow(data)``
+    Adds a row. Data is a list of cell values.
+
+``getCell(row, col)``
+    Returns cell value.
+
+``setCell(row, col, value)``
+    Sets cell value.
+
+``removeRow(index)``
+    Removes a row.
+
+``clearRows()``
+    Removes all rows.
+
+``getSelectedRow()``
+    Returns selected row index.
+
+``getSelectedCol()``
+    Returns selected column index.
+
+**Keyboard:**
+
+* Arrow keys - Navigate cells
+* Enter - Edit cell (if editable)
+* Escape - Cancel edit
+* Page Up/Down - Scroll vertically
+* Home/End - Jump to first/last column
+
+**Mouse:**
+
+* Left click - Select cell
+* Double click - Edit cell
+
+**Example:**
+
+::
+
+    # Create a data grid
+    grid = new Grid(k, 5, 3, 70, 15)
+    grid.showHeaders = true
+    grid.showRowNumbers = true
+    grid.rowNumberWidth = 4
+    grid.editable = true
+    
+    # Add columns
+    grid.addColumn("ID", 6)
+    grid.addColumn("Name", 20)
+    grid.addColumn("Email", 25)
+    grid.addColumn("Age", 5)
+    
+    # Add data rows
+    grid.addRow(["001", "John Doe", "john@example.com", "28"])
+    grid.addRow(["002", "Jane Smith", "jane@example.com", "34"])
+    grid.addRow(["003", "Bob Wilson", "bob@example.com", "45"])
+    
+    grid.draw()
+    em.registerWidget(grid)
+    em.setFocus(grid)
+    
+    # Access cell data
+    name = grid.getCell(1, 2)  # Row 1, Column 2
+    
+    # Update cell
+    grid.setCell(1, 4, "29")  # Update age
+
+TreeView
+--------
+
+A hierarchical tree control with expand/collapse support.
+
+**Properties:**
+
+* ``rootNodes`` - List of root TreeNode objects
+* ``visibleNodes`` - Flattened list of visible nodes
+* ``selectedIndex`` - Selected node index in visible list
+* ``scrollOffset`` - Vertical scroll offset
+* ``nodeFgColor, nodeBgColor`` - Normal node colors
+* ``selectedFgColor, selectedBgColor`` - Selected node colors
+* ``expandedIcon, collapsedIcon, leafIcon`` - Node icons
+
+**Methods:**
+
+``addRoot(node)``
+    Adds a root TreeNode.
+
+``addRootText(text)``
+    Creates and adds a root node with text. Returns the node.
+
+``getSelectedNode()``
+    Returns selected TreeNode.
+
+``updateVisibleNodes()``
+    Rebuilds visible node list after changes.
+
+``expandAll()``
+    Expands all nodes.
+
+``collapseAll()``
+    Collapses all nodes.
+
+**TreeNode Properties:**
+
+* ``text`` - Node text
+* ``expanded`` - Expanded state
+* ``children`` - List of child nodes
+* ``parent`` - Parent node reference
+* ``data`` - User data attachment
+
+**TreeNode Methods:**
+
+``addChild(node)``
+    Adds a child TreeNode.
+
+``addChildText(text)``
+    Creates and adds child with text. Returns the node.
+
+``expand()``
+    Expands this node.
+
+``collapse()``
+    Collapses this node.
+
+``toggle()``
+    Toggles expanded state.
+
+**Keyboard:**
+
+* Up/Down arrows - Navigate nodes
+* Left arrow - Collapse or go to parent
+* Right arrow - Expand or go to first child
+* +/- keys - Expand/collapse
+* Enter/Space - Toggle expand/collapse
+
+**Mouse:**
+
+* Left click - Select node
+* Click on +/- icon - Toggle expand
+
+**Example:**
+
+::
+
+    # Create tree view
+    tree = new TreeView(k, 5, 3, 35, 15)
+    
+    # Build tree structure
+    root = tree.addRootText("Documents")
+    
+    work = root.addChildText("Work")
+    work.addChildText("Reports")
+    work.addChildText("Presentations")
+    
+    personal = root.addChildText("Personal")
+    photos = personal.addChildText("Photos")
+    photos.addChildText("Vacation 2024")
+    photos.addChildText("Family")
+    personal.addChildText("Music")
+    
+    # Expand some nodes
+    root.expand()
+    work.expand()
+    
+    # Update visible list and draw
+    tree.updateVisibleNodes()
+    tree.draw()
+    
+    em.registerWidget(tree)
+    em.setFocus(tree)
+    
+    # Get selected node
+    node = tree.getSelectedNode()
+    if node != null
+        ? "Selected: " + node.text
+    ok
+
+Utility Controls
+================
+
+ProgressBar
+-----------
+
+A visual progress indicator.
+
+**Properties:**
+
+* ``value`` - Current value (0-100)
+* ``minValue`` - Minimum value (default: 0)
+* ``maxValue`` - Maximum value (default: 100)
+* ``showPercentage`` - Show percentage text
+* ``barFgColor`` - Progress bar color
+* ``barBgColor`` - Background color
+* ``textFgColor`` - Percentage text color
+* ``focusable = false`` - Cannot receive focus
+
+**Methods:**
+
+``setValue(val)``
+    Sets current value.
+
+``getValue()``
+    Returns current value.
+
+``setRange(min, max)``
+    Sets value range.
+
+**Example:**
+
+::
+
+    # Create progress bar
+    progress = new ProgressBar(k, 10, 8, 40, 1)
+    progress.setValue(75)
+    progress.barFgColor = LIGHTGREEN
+    progress.showPercentage = true
+    progress.draw()
+    
+    # Update progress in a loop
+    for i = 0 to 100
+        progress.setValue(i)
+        progress.draw()
+        k.sleep(50)
+    next
+
+Spinner
+-------
+
+A numeric input with increment/decrement buttons.
+
+**Properties:**
+
+* ``value`` - Current numeric value
+* ``minValue`` - Minimum allowed value
+* ``maxValue`` - Maximum allowed value
+* ``step`` - Increment/decrement step
+* ``editing`` - Edit mode state
+
+**Methods:**
+
+``setValue(val)``
+    Sets current value (clamped to range).
+
+``getValue()``
+    Returns current value.
+
+``setRange(min, max)``
+    Sets allowed range.
+
+``increment()``
+    Increases value by step.
+
+``decrement()``
+    Decreases value by step.
+
+**Keyboard:**
+
+* Up arrow - Increment
+* Down arrow - Decrement
+* Enter - Toggle edit mode
+* Digits - Direct input in edit mode
+
+**Mouse:**
+
+* Click [-] - Decrement
+* Click [+] - Increment
+
+**Example:**
+
+::
+
+    # Create spinner for quantity
+    spinQty = new Spinner(k, 15, 10, 15, 1)
+    spinQty.setValue(10)
+    spinQty.setRange(1, 100)
+    spinQty.step = 1
+    spinQty.draw()
+    
+    em.registerWidget(spinQty)
+    
+    # Get value
+    quantity = spinQty.getValue()
+
+HScrollBar
+----------
+
+A horizontal scrollbar control.
+
+**Properties:**
+
+* ``value`` - Current position (0-100)
+* ``minValue, maxValue`` - Range (default: 0-100)
+* ``trackColor`` - Track background color
+* ``thumbColor`` - Thumb/handle color
+
+**Methods:**
+
+``setValue(val)``
+    Sets position value.
+
+``getValue()``
+    Returns current value.
+
+**Keyboard:**
+
+* Left/Right arrows - Move thumb
+
+**Mouse:**
+
+* Click arrows - Step movement
+* Click track - Jump to position
+* Drag thumb - Smooth scrolling
+
+**Example:**
+
+::
+
+    hscroll = new HScrollBar(k, 10, 15, 40, 1)
+    hscroll.setValue(50)
+    hscroll.draw()
+    
+    em.registerWidget(hscroll)
+    
+    # Use value to control content offset
+    offset = hscroll.getValue()
+
+VScrollBar
+----------
+
+A vertical scrollbar control.
+
+**Properties:**
+
+* Same as HScrollBar but oriented vertically
+
+**Methods:**
+
+* Same as HScrollBar
+
+**Keyboard:**
+
+* Up/Down arrows - Move thumb
+
+**Mouse:**
+
+* Same as HScrollBar (vertical orientation)
+
+**Example:**
+
+::
+
+    vscroll = new VScrollBar(k, 50, 3, 1, 15)
+    vscroll.setValue(25)
+    vscroll.draw()
+    
+    em.registerWidget(vscroll)
+
+Navigation Controls
+===================
+
+TabControl
+----------
+
+A tabbed container for organizing content into pages.
+
+**Properties:**
+
+* ``pages`` - List of TabPage objects
+* ``activePageIndex`` - Currently active page (1-based)
+* ``tabFgColor, tabBgColor`` - Inactive tab colors
+* ``activeTabFgColor, activeTabBgColor`` - Active tab colors
+* ``contentFgColor, contentBgColor`` - Content area colors
+* ``borderFgColor`` - Border color
+
+**Methods:**
+
+``addPage(title)``
+    Creates and adds a TabPage. Returns the page.
+
+``removePage(index)``
+    Removes page at index.
+
+``setActivePage(index)``
+    Switches to specified page.
+
+``nextPage()``
+    Switches to next page.
+
+``previousPage()``
+    Switches to previous page.
+
+``getActivePage()``
+    Returns current TabPage.
+
+**TabPage Properties:**
+
+* ``title`` - Page tab title
+* ``children`` - List of child widgets
+* ``childRelX, childRelY`` - Relative positions
+* ``data`` - User data attachment
+
+**TabPage Methods:**
+
+``addChild(widget, relX, relY)``
+    Adds widget with relative position.
+
+``removeChild(widget)``
+    Removes a child widget.
+
+**Keyboard:**
+
+* F11 - Switch between tab pages (when EventManager has TabControl)
+* Tab - Navigate controls within page
+
+**Mouse:**
+
+* Click tab - Switch to page
+* Click controls - Interact
+
+**Example:**
+
+::
+
+    # Create tab control
+    tabs = new TabControl(k, 5, 3, 70, 18)
+    
+    # Add first page
+    page1 = tabs.addPage("General")
+    lblGeneral = new Label(k, 0, 0, 30, 1)
+    lblGeneral.setText("General Settings")
+    lblGeneral.fgColor = YELLOW
+    page1.addChild(lblGeneral, 2, 1)
+    
+    txtName = new TextBox(k, 0, 0, 25, 1)
+    txtName.setText("User")
+    page1.addChild(txtName, 15, 3)
+    
+    # Add second page
+    page2 = tabs.addPage("Advanced")
+    lblAdvanced = new Label(k, 0, 0, 30, 1)
+    lblAdvanced.setText("Advanced Options")
+    lblAdvanced.fgColor = YELLOW
+    page2.addChild(lblAdvanced, 2, 1)
+    
+    chkDebug = new CheckBox(k, 0, 0, 25, 1)
+    chkDebug.setText("Enable debug mode")
+    page2.addChild(chkDebug, 2, 3)
+    
+    # Draw
+    tabs.draw()
+    
+    # Set up with EventManager
+    em.setTabControl(tabs)
+    em.run()
+
+Menu System
+===========
+
+MenuItem
+--------
+
+Represents a single menu item.
+
+**Properties:**
+
+* ``text`` - Item text
+* ``itemType`` - "normal", "separator", "checkbox", or "submenu"
+* ``enabled`` - Enabled state
+* ``checked`` - Checked state (for checkboxes)
+* ``shortcut`` - Keyboard shortcut text
+* ``onClick`` - Click handler
+* ``submenu`` - Submenu reference (for submenu items)
+
+**Methods:**
+
+``setShortcut(text)``
+    Sets shortcut display text. Returns self for chaining.
+
+``setEnabled(state)``
+    Enables or disables item.
+
+``toggle()``
+    Toggles checkbox state.
+
+Menu
+----
+
+A dropdown menu containing MenuItems.
+
+**Properties:**
+
+* ``title`` - Menu title (shown in menu bar)
+* ``items`` - List of MenuItems
+* ``selectedIndex`` - Currently selected item
+* ``visible`` - Visibility state
+* ``activeSubmenu`` - Currently open submenu
+* ``parent`` - Parent menu (for submenus)
+* ``normalFgColor, normalBgColor`` - Normal item colors
+* ``selectedFgColor, selectedBgColor`` - Selected item colors
+* ``disabledFgColor`` - Disabled item color
+
+**Methods:**
+
+``addNormalItem(text, handler)``
+    Adds a normal menu item. Returns the item for chaining.
+
+``addSeparator()``
+    Adds a separator line.
+
+``addCheckboxItem(text, checked, handler)``
+    Adds a checkbox item. Returns the item.
+
+``addSubmenu(text, submenu)``
+    Adds a submenu item.
+
+``show(x, y)``
+    Shows menu at position.
+
+``hide()``
+    Hides the menu.
+
+``moveNext()``
+    Moves to next item.
+
+``movePrevious()``
+    Moves to previous item.
+
+**Example:**
+
+::
+
+    # Create a menu (usually via MenuBar)
+    fileMenu = new Menu(k)
+    fileMenu.title = "File"
+    
+    fileMenu.addNormalItem("New", func item {
+        # Create new file
+    }).setShortcut("Ctrl+N")
+    
+    fileMenu.addNormalItem("Open", func item {
+        # Open file
+    }).setShortcut("Ctrl+O")
+    
+    fileMenu.addSeparator()
+    
+    fileMenu.addNormalItem("Exit", func item {
+        # Exit application
+    }).setShortcut("Alt+F4")
+
+MenuBar
+-------
+
+A horizontal menu bar with dropdown menus.
+
+**Properties:**
+
+* ``menus`` - List of Menu objects
+* ``selectedIndex`` - Selected menu index
+* ``isActive`` - Menu bar active state
+* ``activeMenu`` - Currently open menu
+* ``bgColor`` - Background color
+* ``fgColor`` - Foreground color
+* ``selectedBgColor`` - Selected menu title background
+* ``selectedFgColor`` - Selected menu title foreground
+
+**Methods:**
+
+``createMenu(title)``
+    Creates and adds a menu. Returns the Menu for adding items.
+
+``addMenu(menu)``
+    Adds an existing Menu.
+
+``activate()``
+    Activates the menu bar.
+
+``deactivate()``
+    Deactivates and closes menus.
+
+``openMenu(index)``
+    Opens menu at index.
+
+``closeMenu()``
+    Closes current menu.
+
+``moveNext()``
+    Moves to next menu.
+
+``movePrevious()``
+    Moves to previous menu.
+
+**Keyboard:**
+
+* F10 - Activate menu bar
+* Left/Right arrows - Navigate menus
+* Up/Down arrows - Navigate items
+* Enter - Select item or open submenu
+* Escape - Close menu/deactivate
+
+**Mouse:**
+
+* Click menu title - Open menu
+* Click item - Select
+* Hover submenu item - Open submenu
+
+**Complete Example:**
+
+::
+
+    # Create menu bar
+    menuBar = new MenuBar(k, 1, 1, 80)
+    
+    # File menu
+    fileMenu = menuBar.createMenu("File")
+    fileMenu.addNormalItem("New", func item {
+        $statusBar.setText("Creating new file...")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+N")
+    
+    fileMenu.addNormalItem("Open", func item {
+        $statusBar.setText("Opening file...")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+O")
+    
+    fileMenu.addNormalItem("Save", func item {
+        $statusBar.setText("Saving file...")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+S")
+    
+    fileMenu.addSeparator()
+    
+    fileMenu.addNormalItem("Exit", func item {
+        $statusBar.setText("Exiting...")
+        $statusBar.draw()
+    })
+    
+    # Edit menu
+    editMenu = menuBar.createMenu("Edit")
+    editMenu.addNormalItem("Undo", func item {
+        $statusBar.setText("Undo")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+Z")
+    
+    editMenu.addNormalItem("Redo", func item {
+        $statusBar.setText("Redo")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+Y")
+    
+    editMenu.addSeparator()
+    
+    editMenu.addNormalItem("Cut", func item {
+        $statusBar.setText("Cut")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+X")
+    
+    editMenu.addNormalItem("Copy", func item {
+        $statusBar.setText("Copy")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+C")
+    
+    editMenu.addNormalItem("Paste", func item {
+        $statusBar.setText("Paste")
+        $statusBar.draw()
+    }).setShortcut("Ctrl+V")
+    
+    # View menu with submenu
+    viewMenu = menuBar.createMenu("View")
+    
+    viewMenu.addCheckboxItem("Toolbar", true, func item {
+        if item.checked
+            $statusBar.setText("Toolbar shown")
+        else
+            $statusBar.setText("Toolbar hidden")
+        ok
+        $statusBar.draw()
+    })
+    
+    viewMenu.addCheckboxItem("Status Bar", true, func item {
+        $statusBar.draw()
+    })
+    
+    viewMenu.addSeparator()
+    
+    # Create zoom submenu
+    zoomMenu = new Menu(k)
+    zoomMenu.addNormalItem("50%", func item {
+        $statusBar.setText("Zoom: 50%")
+        $statusBar.draw()
+    })
+    zoomMenu.addNormalItem("100%", func item {
+        $statusBar.setText("Zoom: 100%")
+        $statusBar.draw()
+    })
+    zoomMenu.addNormalItem("150%", func item {
+        $statusBar.setText("Zoom: 150%")
+        $statusBar.draw()
+    })
+    zoomMenu.addNormalItem("200%", func item {
+        $statusBar.setText("Zoom: 200%")
+        $statusBar.draw()
+    })
+    
+    viewMenu.addSubmenu("Zoom", zoomMenu)
+    
+    # Draw menu bar
+    menuBar.draw()
+    
+    # Set up with EventManager
+    em.setMenuBar(menuBar)
+
+Event Handling
+==============
+
+Keyboard Events
+---------------
+
+Keyboard events are handled through the EventManager or custom handlers.
+
+**Key Constants:**
+
+============= ===== ===========
+Constant      Value Description
+============= ===== ===========
+KEY_ESCAPE    1     Escape key
+KEY_ENTER     2     Enter key
+KEY_SPACE     3     Space key
+KEY_BACKSPACE 4     Backspace
+KEY_TAB       5     Tab key
+KEY_UP        14    Up arrow
+KEY_DOWN      15    Down arrow
+KEY_LEFT      16    Left arrow
+KEY_RIGHT     17    Right arrow
+KEY_INSERT    18    Insert
+KEY_DELETE    19    Delete
+KEY_HOME      20    Home
+KEY_END       21    End
+KEY_PGUP      22    Page Up
+KEY_PGDN      23    Page Down
+KEY_F1-F12    59-70 Function keys
+============= ===== ===========
+
+**Custom Keyboard Handler:**
+
+::
+
+    em.setOnKeyboard(func evt {
+        nKey = evt.key
+        
+        # Handle F1 for help
+        if nKey = KEY_F1
+            showHelp()
+            return true  # Event handled
+        ok
+        
+        # Handle Ctrl+S (example)
+        if nKey = 19  # Ctrl+S
+            saveFile()
+            return true
+        ok
+        
+        return false  # Let default handling continue
+    })
+
+Mouse Events
+------------
+
+Mouse events include position and button state.
+
+**Mouse Information:**
+
+The library uses RogueUtil's MouseInfo function:
+
+* ``MOUSEINFO_ACTIVE`` - Mouse event occurred
+* ``MOUSEINFO_X`` - X coordinate
+* ``MOUSEINFO_Y`` - Y coordinate
+* ``MOUSEINFO_BUTTONS`` - Button state
+* ``MOUSEINFO_LEFTBUTTON`` - Left button pressed
+
+**Custom Mouse Handler:**
+
+::
+
+    em.setOnMouse(func evt {
+        mouseX = evt.x
+        mouseY = evt.y
+        
+        # Check if click is in a specific region
+        if mouseX >= 10 and mouseX <= 30 and mouseY = 5
+            handleCustomClick(mouseX, mouseY)
+            return true
+        ok
+        
+        return false  # Let default handling continue
+    })
+
+Timer Events
+------------
+
+Periodic callbacks for animations or updates.
+
+**Setting Timer Handler:**
+
+::
+
+    # Timer called every 20 iterations (~200ms at 10ms sleep)
+    em.setOnTimer(func {
+        # Update animation
+        $progress.setValue($progress.getValue() + 1)
+        if $progress.getValue() > 100
+            $progress.setValue(0)
+        ok
+        $progress.draw()
+    }, 20)
+    
+    # Disable timer
+    em.setOnTimer(null, 0)
+
+Global Variables Pattern
+------------------------
+
+Since Ring anonymous functions don't capture local variables (no closures),
+use global variables for data accessed by event handlers.
+
+**Declaring Globals:**
+
+::
+
+    # At top of file, before any functions
+    $kernel = null
+    $statusBar = null
+    $myTextBox = null
+    $myButton = null
+
+**Assigning Before Use:**
+
+::
+
+    func setupUI
+        # Assign to globals before creating handlers
+        $myTextBox = new TextBox(k, 10, 5, 30, 1)
+        $statusBar = new Label(k, 1, 25, 80, 1)
+        
+        $myButton = new Button(k, 10, 10, 15, 1)
+        $myButton.setText("Click Me")
+        $myButton.onClick = func {
+            # Can now access $myTextBox and $statusBar
+            $statusBar.setText("You entered: " + $myTextBox.text)
+            $statusBar.draw()
+        }
+
+Complete Examples
+=================
+
+Example 1: Simple Form
+----------------------
+
+A basic data entry form::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    # Globals for event handlers
+    $kernel = null
+    $statusBar = null
+    $txtName = null
+    $txtEmail = null
+    $chkNewsletter = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        
+        em = new EventManager(k)
+        
+        # Create window
+        win = new Window(k, 5, 2, 50, 18, "Registration Form")
+        
+        # Name field
+        lblName = new Label(k, 8, 5, 12, 1)
+        lblName.setText("Name:")
+        
+        $txtName = new TextBox(k, 20, 5, 30, 1)
+        
+        # Email field
+        lblEmail = new Label(k, 8, 7, 12, 1)
+        lblEmail.setText("Email:")
+        
+        $txtEmail = new TextBox(k, 20, 7, 30, 1)
+        
+        # Newsletter checkbox
+        $chkNewsletter = new CheckBox(k, 8, 9, 40, 1)
+        $chkNewsletter.setText("Subscribe to newsletter")
+        
+        # Submit button
+        btnSubmit = new Button(k, 15, 12, 12, 1)
+        btnSubmit.setText("Submit")
+        btnSubmit.onClick = func {
+            name = $txtName.text
+            email = $txtEmail.text
+            subscribed = $chkNewsletter.checked
+            
+            msg = "Registered: " + name
+            if subscribed
+                msg = msg + " (subscribed)"
+            ok
+            
+            $statusBar.setText(msg)
+            $statusBar.draw()
+        }
+        
+        # Cancel button
+        btnCancel = new Button(k, 30, 12, 12, 1)
+        btnCancel.setText("Cancel")
+        btnCancel.onClick = func {
+            $txtName.setText("")
+            $txtName.cursorPos = 0
+            $txtName.draw()
+            $txtEmail.setText("")
+            $txtEmail.cursorPos = 0
+            $txtEmail.draw()
+            $chkNewsletter.setChecked(false)
+            $chkNewsletter.draw()
+            $statusBar.setText("Form cleared")
+            $statusBar.draw()
+        }
+        
+        # Status bar
+        $statusBar = new Label(k, 5, 20, 50, 1)
+        $statusBar.setText("Enter your information")
+        $statusBar.fgColor = BLACK
+        $statusBar.bgColor = GREY
+        
+        # Add to window
+        win.addChild(lblName)
+        win.addChild($txtName)
+        win.addChild(lblEmail)
+        win.addChild($txtEmail)
+        win.addChild($chkNewsletter)
+        win.addChild(btnSubmit)
+        win.addChild(btnCancel)
+        
+        # Draw
+        win.draw()
+        $statusBar.draw()
+        
+        # Register and set focus
+        em.registerWidget($txtName)
+        em.registerWidget($txtEmail)
+        em.registerWidget($chkNewsletter)
+        em.registerWidget(btnSubmit)
+        em.registerWidget(btnCancel)
+        em.setFocus($txtName)
+        
+        # Run
+        em.run()
+        
+        k.disableMouse()
+
+Example 2: Data Browser
+-----------------------
+
+A grid-based data viewer::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    $kernel = null
+    $statusBar = null
+    $grid = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        
+        em = new EventManager(k)
+        
+        # Create window
+        win = new Window(k, 2, 1, 76, 22, "Employee Database")
+        
+        # Create grid
+        $grid = new Grid(k, 4, 3, 70, 15)
+        $grid.showHeaders = true
+        $grid.showRowNumbers = true
+        $grid.rowNumberWidth = 4
+        $grid.editable = true
+        
+        # Add columns
+        $grid.addColumn("ID", 6)
+        $grid.addColumn("Name", 18)
+        $grid.addColumn("Department", 15)
+        $grid.addColumn("Salary", 10)
+        $grid.addColumn("Start Date", 12)
+        
+        # Add sample data
+        $grid.addRow(["E001", "John Smith", "Engineering", "75000", "2020-01-15"])
+        $grid.addRow(["E002", "Jane Doe", "Marketing", "65000", "2019-06-01"])
+        $grid.addRow(["E003", "Bob Johnson", "Sales", "70000", "2021-03-20"])
+        $grid.addRow(["E004", "Alice Brown", "Engineering", "80000", "2018-11-10"])
+        $grid.addRow(["E005", "Charlie Wilson", "HR", "55000", "2022-02-28"])
+        
+        # Help label
+        lblHelp = new Label(k, 4, 19, 70, 1)
+        lblHelp.setText("Arrows: Navigate | Enter: Edit | Tab: Next cell | ESC: Exit")
+        lblHelp.fgColor = LIGHTGREEN
+        
+        # Status bar
+        $statusBar = new Label(k, 2, 24, 76, 1)
+        $statusBar.setText("Employee Database - 5 records")
+        $statusBar.fgColor = BLACK
+        $statusBar.bgColor = GREY
+        
+        # Add to window
+        win.addChild($grid)
+        win.addChild(lblHelp)
+        
+        # Draw
+        win.draw()
+        $statusBar.draw()
+        
+        # Register
+        em.registerWidget($grid)
+        em.setFocus($grid)
+        
+        # Custom keyboard for status updates
+        em.setOnKeyboard(func evt {
+            # After any key, update status with selection
+            row = $grid.selectedRow
+            col = $grid.selectedCol
+            if row >= 1 and row <= len($grid.rows)
+                emp = $grid.getCell(row, 2)  # Name column
+                $statusBar.setText("Selected: " + emp + " (Row " + row + ", Col " + col + ")")
+                $statusBar.draw()
+            ok
+            return false  # Let default handling continue
+        })
+        
+        em.run()
+        
+        k.disableMouse()
+
+Example 3: File Browser with Tree
+---------------------------------
+
+A file system browser using TreeView::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    $kernel = null
+    $statusBar = null
+    $tree = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        
+        em = new EventManager(k)
+        
+        # Create window
+        win = new Window(k, 2, 1, 50, 22, "File Browser")
+        
+        # Create tree view
+        $tree = new TreeView(k, 4, 3, 44, 16)
+        
+        # Build file structure
+        rootC = $tree.addRootText("C:")
+        
+        programFiles = rootC.addChildText("Program Files")
+        office = programFiles.addChildText("Microsoft Office")
+        office.addChildText("Word.exe")
+        office.addChildText("Excel.exe")
+        office.addChildText("PowerPoint.exe")
+        
+        ring = programFiles.addChildText("Ring")
+        ring.addChildText("ring.exe")
+        ring.addChildText("ring2exe.exe")
+        ringLib = ring.addChildText("lib")
+        ringLib.addChildText("stdlib.ring")
+        ringLib.addChildText("guilib.ring")
+        
+        users = rootC.addChildText("Users")
+        userDir = users.addChildText("User")
+        docs = userDir.addChildText("Documents")
+        docs.addChildText("report.docx")
+        docs.addChildText("data.xlsx")
+        desktop = userDir.addChildText("Desktop")
+        desktop.addChildText("shortcut.lnk")
+        
+        # Expand some nodes
+        rootC.expand()
+        programFiles.expand()
+        
+        $tree.updateVisibleNodes()
+        
+        # Status bar
+        $statusBar = new Label(k, 2, 24, 50, 1)
+        $statusBar.setText("Use arrows to navigate, +/- to expand/collapse")
+        $statusBar.fgColor = BLACK
+        $statusBar.bgColor = GREY
+        
+        # Add to window
+        win.addChild($tree)
+        
+        # Draw
+        win.draw()
+        $statusBar.draw()
+        
+        # Register
+        em.registerWidget($tree)
+        em.setFocus($tree)
+        
+        # Update status on navigation
+        em.setOnKeyboard(func evt {
+            node = $tree.getSelectedNode()
+            if node != null
+                $statusBar.setText("Selected: " + node.text)
+                $statusBar.draw()
+            ok
+            return false
+        })
+        
+        em.run()
+        
+        k.disableMouse()
+
+Example 4: Settings with Tabs
+-----------------------------
+
+A multi-page settings dialog::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    $kernel = null
+    $statusBar = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        
+        em = new EventManager(k)
+        
+        # Create tab control
+        tabs = new TabControl(k, 5, 2, 70, 18)
+        
+        # === General Settings Page ===
+        page1 = tabs.addPage("General")
+        
+        lblTitle1 = new Label(k, 0, 0, 30, 1)
+        lblTitle1.setText("General Settings")
+        lblTitle1.fgColor = YELLOW
+        page1.addChild(lblTitle1, 2, 1)
+        
+        lblUser = new Label(k, 0, 0, 12, 1)
+        lblUser.setText("Username:")
+        page1.addChild(lblUser, 2, 3)
+        
+        txtUser = new TextBox(k, 0, 0, 25, 1)
+        txtUser.setText("Admin")
+        page1.addChild(txtUser, 15, 3)
+        
+        lblTheme = new Label(k, 0, 0, 12, 1)
+        lblTheme.setText("Theme:")
+        page1.addChild(lblTheme, 2, 5)
+        
+        cmbTheme = new ComboBox(k, 0, 0, 25, 1)
+        cmbTheme.addItem("Light")
+        cmbTheme.addItem("Dark")
+        cmbTheme.addItem("System")
+        page1.addChild(cmbTheme, 15, 5)
+        
+        # === Display Settings Page ===
+        page2 = tabs.addPage("Display")
+        
+        lblTitle2 = new Label(k, 0, 0, 30, 1)
+        lblTitle2.setText("Display Settings")
+        lblTitle2.fgColor = YELLOW
+        page2.addChild(lblTitle2, 2, 1)
+        
+        chkFullscreen = new CheckBox(k, 0, 0, 30, 1)
+        chkFullscreen.setText("Fullscreen mode")
+        page2.addChild(chkFullscreen, 2, 3)
+        
+        chkAnimations = new CheckBox(k, 0, 0, 30, 1)
+        chkAnimations.setText("Enable animations")
+        chkAnimations.setChecked(true)
+        page2.addChild(chkAnimations, 2, 4)
+        
+        lblBrightness = new Label(k, 0, 0, 15, 1)
+        lblBrightness.setText("Brightness:")
+        page2.addChild(lblBrightness, 2, 6)
+        
+        spinBright = new Spinner(k, 0, 0, 15, 1)
+        spinBright.setValue(100)
+        spinBright.setRange(0, 100)
+        spinBright.step = 10
+        page2.addChild(spinBright, 18, 6)
+        
+        # === Advanced Settings Page ===
+        page3 = tabs.addPage("Advanced")
+        
+        lblTitle3 = new Label(k, 0, 0, 30, 1)
+        lblTitle3.setText("Advanced Settings")
+        lblTitle3.fgColor = YELLOW
+        page3.addChild(lblTitle3, 2, 1)
+        
+        chkDebug = new CheckBox(k, 0, 0, 30, 1)
+        chkDebug.setText("Debug mode")
+        page3.addChild(chkDebug, 2, 3)
+        
+        chkLogs = new CheckBox(k, 0, 0, 30, 1)
+        chkLogs.setText("Enable logging")
+        page3.addChild(chkLogs, 2, 4)
+        
+        lblLogLevel = new Label(k, 0, 0, 15, 1)
+        lblLogLevel.setText("Log level:")
+        page3.addChild(lblLogLevel, 2, 6)
+        
+        lstLogLevel = new ListBox(k, 0, 0, 20, 4)
+        lstLogLevel.addItem("Error")
+        lstLogLevel.addItem("Warning")
+        lstLogLevel.addItem("Info")
+        lstLogLevel.addItem("Debug")
+        lstLogLevel.selectedIndex = 3
+        page3.addChild(lstLogLevel, 18, 6)
+        
+        # Draw tabs
+        tabs.draw()
+        
+        # Status bar
+        $statusBar = new Label(k, 5, 21, 70, 1)
+        $statusBar.setText("F11: Switch tabs | Tab: Navigate | ESC: Exit")
+        $statusBar.fgColor = BLACK
+        $statusBar.bgColor = GREY
+        $statusBar.draw()
+        
+        # Set up EventManager with tabs
+        em.setTabControl(tabs)
+        
+        em.run()
+        
+        k.disableMouse()
+
+Example 5: Multi-Window Application
+-----------------------------------
+
+Using WindowManager for overlapping windows::
+
+    load "stdlibcore.ring"
+    load "rogueutil.ring"
+    
+    $kernel = null
+    
+    func main
+        k = new Kernel()
+        $kernel = k
+        k.clear()
+        k.enableMouse()
+        k.setDefaultColors(WHITE, BLUE)
+        
+        # Fill background
+        k.setTermColor(WHITE, BLUE)
+        for row = 1 to 25
+            k.printAt(1, row, copy(" ", 80))
+        next
+        
+        # Create window manager
+        wm = new WindowManager(k)
+        
+        # Create editor window
+        winEditor = new ManagedWindow(k, 2, 2, 40, 15, "Editor")
+        winEditor.draggable = true
+        winEditor.resizable = true
+        
+        lblEditor = new Label(k, 0, 0, 35, 1)
+        lblEditor.setText("Text Editor Window")
+        lblEditor.fgColor = YELLOW
+        winEditor.addChild(lblEditor, 2, 1)
+        
+        editContent = new EditBox(k, 0, 0, 34, 8)
+        editContent.setText("Type your text here..." + nl + "Multiple lines supported.")
+        winEditor.addChild(editContent, 2, 3)
+        
+        # Create file list window
+        winFiles = new ManagedWindow(k, 25, 5, 35, 12, "Files")
+        winFiles.draggable = true
+        winFiles.resizable = true
+        
+        lstFiles = new ListBox(k, 0, 0, 30, 8)
+        lstFiles.addItem("document.txt")
+        lstFiles.addItem("notes.txt")
+        lstFiles.addItem("readme.md")
+        lstFiles.addItem("config.ini")
+        lstFiles.addItem("data.csv")
+        winFiles.addChild(lstFiles, 2, 1)
+        
+        # Create properties window
+        winProps = new ManagedWindow(k, 45, 8, 30, 10, "Properties")
+        winProps.draggable = true
+        
+        lblName = new Label(k, 0, 0, 25, 1)
+        lblName.setText("Name: document.txt")
+        winProps.addChild(lblName, 2, 1)
+        
+        lblSize = new Label(k, 0, 0, 25, 1)
+        lblSize.setText("Size: 1,234 bytes")
+        winProps.addChild(lblSize, 2, 2)
+        
+        lblDate = new Label(k, 0, 0, 25, 1)
+        lblDate.setText("Modified: 2024-01-15")
+        winProps.addChild(lblDate, 2, 3)
+        
+        # Add windows to manager
+        wm.addWindow(winEditor)
+        wm.addWindow(winFiles)
+        wm.addWindow(winProps)
+        
+        # Help text at bottom
+        k.setTermColor(YELLOW, BLUE)
+        k.printAt(2, 24, "F12: Switch windows | Drag title to move | ESC: Exit")
+        
+        # Run window manager
+        wm.run()
+        
+        k.disableMouse()
+
+Troubleshooting
+===============
+
+Common Issues
+-------------
+
+**Controls not responding to clicks:**
+
+Ensure widgets are registered with EventManager::
+
+    em.registerWidget(myButton)
+
+**Text cursor not visible:**
+
+Call showCursor() after draw()::
+
+    textBox.draw()
+    textBox.showCursor()
+
+**Global variables not accessible in handlers:**
+
+Declare globals at file top::
+
+    $myVar = null  # At top of file
+    
+    func setup
+        $myVar = "value"  # Assign before use
+
+**Menu not closing properly:**
+
+Ensure kernel has screen widgets registered for proper redraw::
+
+    k.registerScreenWidget(tabs)
+
+**Window content not showing after maximize/restore:**
+
+The library uses deferred redraw. If issues persist, call drawAll()::
+
+    wm.requestFullRedraw()
+
+Performance Tips
+----------------
+
+* Use ``checkKeyHit()`` for non-blocking input
+* Minimize full redraws; update only changed widgets
+* Use timer intervals appropriate for your needs (20+ recommended)
+* Register only interactive widgets with EventManager
+* Use ``addChild()`` pattern for container-based drawing
+
+Best Practices
+--------------
+
+1. **Initialize globals early**: Declare all globals at file start
+2. **Use containers**: Add widgets to Window/Frame for single draw() calls
+3. **Clean up handlers**: Set handlers to null when done
+4. **Unregister widgets**: Remove widgets from EventManager when switching screens
+5. **Handle ESC consistently**: Use EventManager's default ESC handling or override thoughtfully
+6. **Test with mouse disabled**: Ensure keyboard navigation works fully
+
+API Reference Summary
+=====================
+
+Classes Overview
+----------------
+
+=========== =====================================
+Class       Description
+=========== =====================================
+Kernel      Terminal operations and rendering
+Event       User input event data
+EventManager Main event loop and widget management
+Widget      Base class for all controls
+Frame       Container with children
+Window      Titled container with border
+ManagedWindow Draggable, resizable window
+WindowManager Multi-window management
+Label       Text display (non-focusable)
+Button      Clickable button
+TextBox     Single-line text input
+EditBox     Multi-line text editor
+CheckBox    Toggle checkbox
+ListBox     Scrollable item list
+ComboBox    Dropdown selection
+Grid        Data table with editing
+TreeView    Hierarchical tree
+TreeNode    Tree node data
+TabControl  Tabbed container
+TabPage     Tab page data
+ProgressBar Progress indicator
+Spinner     Numeric input
+HScrollBar  Horizontal scrollbar
+VScrollBar  Vertical scrollbar
+MenuBar     Horizontal menu bar
+Menu        Dropdown menu
+MenuItem    Menu item data
+Rectangle   Decorative border
+=========== =====================================
+
+License
+=======
+
+The Ring TUI Library is provided as open source software. Feel free to use,
+modify, and distribute according to the Ring programming language license terms.
+
+Acknowledgments
+===============
+
+* Ring Programming Language by Mahmoud Samir Fayed
+* RogueUtil library for terminal manipulation
+* Inspired by classic TUI libraries and modern GUI frameworks
+
+================================================================================
+End of Ring TUI Library Tutorial
+================================================================================
